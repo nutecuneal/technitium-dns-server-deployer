@@ -1,0 +1,48 @@
+version: '3.9'
+
+services:
+  app:
+    build: .
+    container_name: 'dns-server-app'
+    #ports:
+    # - '53:53'
+    # - '53:53/udp'
+    # - '5380:5380'
+    # - "67:67/udp"
+    # - "853:853/tcp"
+    # - "443:443/tcp"
+    # - "80:80/tcp"
+    # - "8053:8053/tcp"
+    hostname: dns-server
+    environment:
+      - DNS_SERVER_DOMAIN=dns-server
+      - DNS_SERVER_ADMIN_PASSWORD=webuserpass
+      - DNS_SERVER_RECURSION=AllowOnlyForPrivateNetworks
+    volumes:
+      - '$(pwd)/etc_dns_config:/etc/dns/config'
+    networks:
+      - networkName
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'drill',
+          'duckduckgo.com',
+          '@127.0.0.1',
+          '||',
+          'exit 1'
+        ]
+      interval: 30s
+      timeout: 30s
+      retries: 3
+      start_period: 5s
+
+networks:
+  dns-server-net:
+    name: 'dns-server-net'
+    ipam:
+      driver: default
+      config:
+        - subnet: '172.18.0.0/28'
+          gateway: 172.18.0.1
